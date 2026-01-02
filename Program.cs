@@ -1,10 +1,15 @@
+using Microsoft.EntityFrameworkCore;
 using PetHealthHistory.Components;
+using PetHealthHistory.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddRazorComponents()
     .AddInteractiveServerComponents();
+
+// dodanie bazy dancyh Sqlite
+builder.Services.AddDbContextFactory<PetHealthHistoryContext>(options => options.UseSqlite("Data Source=PetHealthHistory.db"));
 
 var app = builder.Build();
 
