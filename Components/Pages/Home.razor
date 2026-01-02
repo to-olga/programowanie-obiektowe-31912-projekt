@@ -1,7 +1,50 @@
 ﻿@page "/"
+@rendermode InteractiveServer
+@using Microsoft.EntityFrameworkCore
+@using PetHealthHistory.Data
 
-<PageTitle>Home</PageTitle>
+<PageTitle>Pets</PageTitle>
 
-<h1>Hello, world!</h1>
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1>Your pets</h1>
+</div>
+<div class="pt-2">
+    @if (_pets == null)
+    {
+        <p>Loading...</p>
+    }
+    else if (_pets.Length > 0)
+    {
+        <div class="list-group">
+            @foreach (var pet in _pets)
+            {
+                <a class="list-group-item list-group-item-action icon-@pet.PetType.ToString().ToLower()">@pet.Name</a>
+            }
+        </div>
+    }
+    else
+    {
+        <p>No pets added.</p>
+    }
+</div>
 
-Welcome to your new app.
+
+
+@code
+{
+    [Inject] private IDbContextFactory<PetHealthHistoryContext> DbFactory { get; set; }
+
+    private Pet[]? _pets;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await using var context = DbFactory.CreateDbContext();
+            // lista zwierząt z bazy danych posortowana wg imienia i daty urodzenia
+            _pets = await context.Pets.OrderBy(p => p.Name).ThenBy(p => p.BirthDate).ToArrayAsync();
+            
+            StateHasChanged();
+        }
+    }
+}
