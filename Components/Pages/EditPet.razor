@@ -1,0 +1,50 @@
+@page "/Pet/{id:int}/Edit"
+@rendermode InteractiveServer
+@using Microsoft.EntityFrameworkCore
+@using PetHealthHistory.Components.Forms
+@using PetHealthHistory.Data
+
+<PageTitle>Edit Pet</PageTitle>
+<h3>Edit Pet</h3>
+
+@if (_pet == null)
+{
+    <p>Loading...</p>
+}
+else 
+{
+    <PetForm 
+            Id="@_pet.Id" 
+            Name="@_pet.Name" 
+            Kind="@_pet.Kind" 
+            Type="@_pet.PetType" 
+            BirthDate="@_pet.BirthDate"
+            SaveLabel="Save"></PetForm>
+}
+
+@code 
+{
+    [Parameter] public int Id { get; set; }
+
+    [Inject] private IDbContextFactory<PetHealthHistoryContext> DbFactory { get; set; }
+    [Inject] private NavigationManager NavigationManager { get; set; }
+    
+    private Pet? _pet;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await using var context = DbFactory.CreateDbContext();
+            _pet = await context.Pets.FindAsync(Id);
+            
+            if (_pet == null)
+            {
+                NavigationManager.NotFound();
+                return;
+            }
+            
+            StateHasChanged();
+        }
+    }
+}

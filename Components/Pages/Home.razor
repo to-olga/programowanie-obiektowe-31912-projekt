@@ -19,7 +19,10 @@
         <div class="list-group">
             @foreach (var pet in _pets)
             {
-                <a class="list-group-item list-group-item-action icon-@pet.PetType.ToString().ToLower()">@pet.Name</a>
+                <a class="list-group-item list-group-item-action icon-@pet.PetType.ToString().ToLower()">
+                    @pet.Name
+                    <span class="edit-btn" @onclick='() => NavigationManager.NavigateTo($"/Pet/{pet.Id}/Edit")' @onclick:stopPropagation="true">🛠️</span>
+                </a>
             }
         </div>
     }

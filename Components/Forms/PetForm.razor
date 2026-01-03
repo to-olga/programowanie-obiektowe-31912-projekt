@@ -1,16 +1,16 @@
 @using Microsoft.EntityFrameworkCore
 @using PetHealthHistory.Data
 
-@if (!string.IsNullOrWhiteSpace(_error))
+@if (!string.IsNullOrWhiteSpace(Error))
 {
-    <div class="text-danger">@_error</div>
+    <div class="text-danger">@Error</div>
 }
 <div class="row py-2">
     <div class="col-2 col-form-label">
         <label for="Name">Name:</label>
     </div>
     <div class="col-4">
-        <input id="Name" name="Name" type="text" class="form-control" @bind="_name" required />
+        <input id="Name" name="Name" type="text" class="form-control" @bind="Name" required />
     </div>
 </div>
 <div class="row py-2">
@@ -18,7 +18,7 @@
         <label for="Kind">Species/Breed:</label>
     </div>
     <div class="col-4">
-        <input id="Kind" name="Kind" type="text" class="form-control" @bind="_kind" />
+        <input id="Kind" name="Kind" type="text" class="form-control" @bind="Kind" />
     </div>
 </div>
 <div class="row py-2">
@@ -26,7 +26,7 @@
         <label for="Name">Type:</label>
     </div>
     <div class="col-4">
-        <select @bind="_type" class="form-select">
+        <select @bind="Type" class="form-select">
             @foreach (var petType in Enum.GetValues(typeof(PetType)))
             {
                 <option value="@petType">@petType.ToString()</option>
@@ -39,49 +39,51 @@
         <label for="BirthDate">Birth date:</label>
     </div>
     <div class="col-4">
-        <input id="BirthDate" name="BirthDate" type="date" class="form-control" format max="@DateTime.Today.ToString("yyyy-MM-dd")" @bind="_birthDate" required />
+        <input id="BirthDate" name="BirthDate" type="date" class="form-control" format max="@DateTime.Today.ToString("yyyy-MM-dd")" @bind="BirthDate" required />
     </div>
 </div>
 
 <div class="d-flex gap-2">
     <button class="btn btn-outline-secondary" @onclick='() => NavigationManager.NavigateTo("/")'>Cancel</button>
-    <button class="btn btn-primary" @onclick="Save">Add</button>
+    <button class="btn btn-primary" @onclick="Save">@SaveLabel</button>
 </div>
 
 
 @code {
-    private string? _name;
-    private string? _kind;
-    private PetType _type = PetType.Dog;
-    private DateOnly? _birthDate;
-    private string? _error;
+    [Parameter] public int? Id { get; set; }
+    [Parameter] public string? Name { get; set; }
+    [Parameter] public string? Kind { get; set; }
+    [Parameter] public PetType Type { get; set; } = PetType.Dog;
+    [Parameter] public DateOnly? BirthDate { get; set; }
+    [Parameter] public string? Error { get; set; }
+    [Parameter] public string SaveLabel { get; set; } = "Add";
 
     [Inject] private IDbContextFactory<PetHealthHistoryContext> DbFactory { get; set; }
     [Inject] private NavigationManager NavigationManager { get; set; }
-
+    
     private async Task Save()
     {
         // walidacja formularza
-        _error = null;
-        if (string.IsNullOrWhiteSpace(_name))
+        Error = null;
+        if (string.IsNullOrWhiteSpace(Name))
         {
-            _error = "Missing name";
+            Error = "Missing name";
         }
 
-        if (_birthDate == null)
+        if (BirthDate == null)
         {
-            if (_error == null)
+            if (Error == null)
             {
-                _error = "Missing birth date";
+                Error = "Missing birth date";
             }
             else
             {
-                _error += " and birth date";
+                Error += " and birth date";
             }
         }
         
         // wyświetl błąd jeżeli któreś pole było nieprawidłowe
-        if (_error != null)
+        if (Error != null)
         {
             return;
         }
@@ -89,16 +91,42 @@
         try
         {
             await using var context = DbFactory.CreateDbContext();
-            
-            // stwórz obiekt odpowiedniej klasy na podstawie wartości wybranej przez użytkownika
-            var pet = GetNewPetFromType();
-            context.Pets.Add(pet);
+            // jeżeli parametr Id ma wartość to jest to edycja a nie dodanie nowego zwierzęcia
+            if (Id.HasValue)
+            {
+                var pet = await context.Pets.FindAsync(Id.Value);
+                if (pet == null)
+                {
+                    NavigationManager.NotFound();
+                    return;
+                }
+
+                if (pet.PetType != Type)
+                {
+                    // przy zmianie typu tworzymy obiekt na nowo, a stary usuwamy
+                    var newPet = GetNewPetFromType();
+                    context.Pets.Remove(pet);
+                    context.Pets.Add(newPet);
+                }
+                else
+                {
+                    pet.Name = Name!;
+                    pet.Kind = Kind;
+                    pet.BirthDate = BirthDate!.Value;
+                }
+            }
+            else
+            {
+                // stwórz obiekt odpowiedniej klasy na podstawie wartości wybranej przez użytkownika
+                var pet = GetNewPetFromType();
+                context.Pets.Add(pet);
+            }
 
             await context.SaveChangesAsync();
         }
         catch (Exception ex)
         {
-            _error = ex.Message;
+            Error = ex.Message;
             return;
         }
 
@@ -107,13 +135,12 @@
 
     private Pet GetNewPetFromType()
     {
-        Pet pet = _type switch
+        Pet pet = Type switch
         {
-            PetType.Cat => new Cat(_name!, _birthDate!.Value, _kind),
-            PetType.Dog => new Dog(_name!, _birthDate!.Value, _kind),
-            _ => throw new ArgumentOutOfRangeException($"Invalid pet type: {_type.ToString()}")
+            PetType.Cat => new Cat(Name!, BirthDate!.Value, Kind),
+            PetType.Dog => new Dog(Name!, BirthDate!.Value, Kind),
+            _ => throw new ArgumentOutOfRangeException($"Invalid pet type: {Type.ToString()}")
         };
-        
         return pet;
     }
 }
