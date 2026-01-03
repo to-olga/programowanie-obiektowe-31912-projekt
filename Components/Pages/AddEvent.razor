@@ -1,0 +1,14 @@
+@page "/Pet/{PetId:int}/AddEvent"
+@rendermode InteractiveServer
+@using PetHealthHistory.Components.Forms
+
+<PageTitle>Add Event</PageTitle>
+
+<h3>Add Event</h3>
+
+<EventForm PetId="@PetId" />
+
+@code 
+{
+    [Parameter] public int PetId { get; set; }
+}
