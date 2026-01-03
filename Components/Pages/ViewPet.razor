@@ -1,0 +1,60 @@
+@page "/Pet/{id:int}"
+@rendermode InteractiveServer
+@using Microsoft.EntityFrameworkCore
+@using PetHealthHistory.Data
+
+<PageTitle>Pet Details</PageTitle>
+
+@if (_pet == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h3>
+            <span class="icon-@_pet.PetType.ToString().ToLower()"></span>
+            @_pet.Name (@_pet.PetType.ToString())
+        </h3>
+        <div class="d-flex gap-2">
+            <button class="btn btn-outline-primary btn-sm" @onclick='() => NavigationManager.NavigateTo($"/Pet/{_pet.Id}/Edit")'>Edit</button>
+            <button class="btn btn-outline-danger btn-sm" @onclick='() => NavigationManager.NavigateTo($"/Pet/{_pet.Id}/Delete")'>Delete</button>
+            <button class="btn btn-outline-secondary btn-sm" @onclick='() => NavigationManager.NavigateTo("/")'>Back to list</button>
+        </div>
+    </div>
+    
+    <div class="mb-4">
+        <p><strong>Birth Date:</strong> @_pet.BirthDate.ToShortDateString()</p>
+        @* nie wyświetlaj pustych pól *@
+        @if (!string.IsNullOrWhiteSpace(_pet.Kind))
+        {
+            <p><strong>Species/Breed:</strong> @_pet.Kind</p>
+        }
+    </div>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    [Inject] public IDbContextFactory<PetHealthHistoryContext> DbFactory { get; private set; }
+    [Inject] public NavigationManager NavigationManager { get; private set; }
+
+    private Pet? _pet;
+    
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await using var context = DbFactory.CreateDbContext();
+            _pet = await context.Pets.FindAsync(Id);
+        
+            if (_pet == null)
+            {
+                NavigationManager.NotFound();
+                return;
+            }
+            
+            StateHasChanged();
+        }
+    }
+}

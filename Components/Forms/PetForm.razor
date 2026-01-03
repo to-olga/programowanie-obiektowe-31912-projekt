@@ -44,7 +44,7 @@
 </div>
 
 <div class="d-flex gap-2">
-    <button class="btn btn-outline-secondary" @onclick='() => NavigationManager.NavigateTo("/")'>Cancel</button>
+    <button class="btn btn-outline-secondary" @onclick='() => NavigationManager.NavigateTo(_cancelLink)'>Cancel</button>
     <button class="btn btn-primary" @onclick="Save">@SaveLabel</button>
 </div>
 
@@ -61,10 +61,22 @@
     [Inject] private IDbContextFactory<PetHealthHistoryContext> DbFactory { get; set; }
     [Inject] private NavigationManager NavigationManager { get; set; }
     
+    private string _cancelLink = "/";
+
+    protected override void OnInitialized()
+    {
+        if (Id.HasValue)
+        {
+            // przy anulowaniu edycji, powrót do strony zwierzęcia
+            _cancelLink = $"/Pet/{Id}";
+        }
+    }
+
     private async Task Save()
     {
         // walidacja formularza
         Error = null;
+        Pet? pet;
         if (string.IsNullOrWhiteSpace(Name))
         {
             Error = "Missing name";
@@ -94,7 +106,7 @@
             // jeżeli parametr Id ma wartość to jest to edycja a nie dodanie nowego zwierzęcia
             if (Id.HasValue)
             {
-                var pet = await context.Pets.FindAsync(Id.Value);
+                pet = await context.Pets.FindAsync(Id.Value);
                 if (pet == null)
                 {
                     NavigationManager.NotFound();
@@ -105,8 +117,14 @@
                 {
                     // przy zmianie typu tworzymy obiekt na nowo, a stary usuwamy
                     var newPet = GetNewPetFromType();
+                    foreach (var petEvent in pet.Events)
+                    {
+                        newPet.Events.Add(petEvent);
+                    }
+                    pet.Events.Clear();
                     context.Pets.Remove(pet);
                     context.Pets.Add(newPet);
+                    pet = newPet;
                 }
                 else
                 {
@@ -118,7 +136,7 @@
             else
             {
                 // stwórz obiekt odpowiedniej klasy na podstawie wartości wybranej przez użytkownika
-                var pet = GetNewPetFromType();
+                pet = GetNewPetFromType();
                 context.Pets.Add(pet);
             }
 
@@ -130,7 +148,7 @@
             return;
         }
 
-        NavigationManager.NavigateTo("/");
+        NavigationManager.NavigateTo($"/Pet/{pet.Id}");
     }
 
     private Pet GetNewPetFromType()
