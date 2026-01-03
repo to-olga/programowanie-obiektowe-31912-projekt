@@ -52,11 +52,15 @@ public abstract class Pet
 
     public abstract PetType PetType { get; protected set; }
     
+    // kolekcja zdarzeń medycznych powiązanych ze zwierzęciem
+    public ICollection<Event> Events { get; protected set; }
+    
     protected Pet(string name, DateOnly birthDate, string? kind)
     {
         Name = name;
         BirthDate = birthDate;
         Kind = kind;
+        Events = [];
     }
 }
 
