@@ -31,6 +31,115 @@ else
             <p><strong>Species/Breed:</strong> @_pet.Kind</p>
         }
     </div>
+    
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h4>Health History</h4>
+    </div>
+
+    @if (!_pet.Events.Any())
+    {
+        <p>No events recorded.</p>
+    }
+    else
+    {
+        <div class="accordion" id="petHistoryAccordion">
+            @* posortuj zdarzenia po dacie *@
+            @foreach (var ev in _pet.Events.OrderByDescending(e => e.Date))
+            {
+                var eventId = $"event-{ev.Id}";
+                <div class="accordion-item">
+                    <h2 class="accordion-header">
+                        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#@eventId" aria-expanded="false" aria-controls="@eventId">
+                            <div class="d-flex justify-content-between align-items-center w-100 me-3">
+                                <span>
+                                    @* inny nagłówek dla każdego rodzaju wizyty *@
+                                    @if (ev is Procedure proc)
+                                    {
+                                        @($"Procedure - {proc.Name}")
+                                    }
+                                    else if (ev is Visit visit)
+                                    {
+                                        @($"Visit - {visit.Doctor} ({visit.Clinic})")
+                                    }
+                                    else if (ev is LabTest)
+                                    {
+                                        @("Lab test")
+                                    }
+                                </span>
+                                <span class="text-nowrap ms-auto">
+                                    @ev.Date.ToShortDateString()
+                                </span>
+                            </div>
+                        </button>
+                    </h2>
+                    <div id="@eventId" class="accordion-collapse collapse" data-bs-parent="#petHistoryAccordion">
+                        <div class="accordion-body">
+                            @if (ev is Visit v)
+                            {
+                                // wyświetlaj tylko wypełnione pola każdego rodzaju wizyty
+                                @if (!string.IsNullOrWhiteSpace(v.Doctor))
+                                {
+                                    <p><strong>Doctor:</strong> @v.Doctor</p>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(v.Clinic))
+                                {
+                                    <p><strong>Clinic:</strong> @v.Clinic</p>
+                                }
+                                @if (ev is Procedure p && !string.IsNullOrWhiteSpace(p.Name))
+                                {
+                                    <p><strong>Procedure Name:</strong> @p.Name</p>
+                                }
+
+                                @if (!string.IsNullOrWhiteSpace(v.Description))
+                                {
+                                    <p>
+                                        <strong>Description:</strong><br />
+                                        @v.Description
+                                    </p>
+                                }
+                            }
+                            else if (ev is LabTest lt)
+                            {
+                                @if (!string.IsNullOrWhiteSpace(lt.LabName))
+                                {
+                                    <p><strong>Laboratory:</strong> @lt.LabName</p>
+                                }
+                                @if (!string.IsNullOrWhiteSpace(lt.OrderedBy))
+                                {
+                                    <p><strong>Ordered By:</strong> @lt.OrderedBy</p>
+                                }
+                                
+                                @if (lt.Results.Any())
+                                {
+                                    <h6>Results:</h6>
+                                    <table class="table table-hover">
+                                        <thead>
+                                            <tr class="text-center">
+                                                <th scope="col">Test</th>
+                                                <th scope="col">Value</th>
+                                                <th scope="col">Range</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @foreach (var res in lt.Results)
+                                            {
+                                                // podświetl wiersz z wynikami poza normą
+                                                <tr class="@(res.InNormalRange ? "" : "table-warning")">
+                                                    <td>@res.TestName</td>
+                                                    <td class="text-center">@res.Value</td>
+                                                    <td class="text-center">@res.NormalRange</td>
+                                                </tr>
+                                            }
+                                        </tbody>
+                                    </table>
+                                }
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
 }
 
 @code {
