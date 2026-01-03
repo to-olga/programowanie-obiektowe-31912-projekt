@@ -2,6 +2,6 @@ a.list-group-item-action {
     cursor: pointer;
 }
 
-.edit-btn {
+.delete-btn, .edit-btn {
     float: right;
 }

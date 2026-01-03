@@ -21,6 +21,7 @@
             {
                 <a class="list-group-item list-group-item-action icon-@pet.PetType.ToString().ToLower()">
                     @pet.Name
+                    <span class="delete-btn ms-2" @onclick='() => NavigationManager.NavigateTo($"/Pet/{pet.Id}/Delete")' @onclick:stopPropagation="true">🗑️</span>
                     <span class="edit-btn" @onclick='() => NavigationManager.NavigateTo($"/Pet/{pet.Id}/Edit")' @onclick:stopPropagation="true">🛠️</span>
                 </a>
             }

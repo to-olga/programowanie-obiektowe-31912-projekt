@@ -1,0 +1,63 @@
+@page "/Pet/{id:int}/Delete"
+@rendermode InteractiveServer
+@using Microsoft.EntityFrameworkCore
+@using PetHealthHistory.Data
+
+<PageTitle>Delete Pet</PageTitle>
+
+<h3>Delete Pet</h3>
+
+@if (_pet == null)
+{
+    <p>Loading...</p>
+}
+else
+{
+    <div class="alert alert-danger">
+        <h4>Are you sure you want to delete <span class="icon-@_pet.PetType.ToString().ToLower()"></span>@_pet.Name (@_pet.PetType.ToString())?</h4>
+        <p>This action cannot be undone.</p>
+        
+        <div class="mt-3">
+            <button class="btn btn-secondary" @onclick='() => NavigationManager.NavigateTo($"/Pet/{Id}")'>Cancel</button>
+            <button class="btn btn-danger" @onclick="Delete">Confirm Delete</button>
+        </div>
+    </div>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    [Inject] private IDbContextFactory<PetHealthHistoryContext> DbFactory { get; set; }
+    [Inject] private NavigationManager NavigationManager { get; set; }
+
+    private Pet? _pet;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await using var context = DbFactory.CreateDbContext();
+            _pet = await context.Pets.FindAsync(Id);
+
+            if (_pet == null)
+            {
+                NavigationManager.NotFound();
+                return;
+            }
+            
+            StateHasChanged();
+        }
+    }
+
+    private async Task Delete()
+    {
+        if (_pet != null)
+        {
+            await using var context = DbFactory.CreateDbContext();
+            context.Pets.Remove(_pet);
+            await context.SaveChangesAsync();
+        }
+        
+        NavigationManager.NavigateTo("/");
+    }
+}
