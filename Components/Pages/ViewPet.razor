@@ -34,6 +34,7 @@ else
     
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h4>Health History</h4>
+        <button class="btn btn-outline-primary btn-sm" @onclick='() => NavigationManager.NavigateTo($"/Pet/{Id}/AddEvent")'>＋ Add Event</button>
     </div>
 
     @if (!_pet.Events.Any())

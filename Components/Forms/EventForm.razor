@@ -1,0 +1,243 @@
+@using Microsoft.EntityFrameworkCore
+@using PetHealthHistory.Data
+
+@if (!string.IsNullOrWhiteSpace(_error))
+{
+    <div class="text-danger mb-3">@_error</div>
+}
+
+<div class="row py-2">
+    <div class="col-2 col-form-label">
+        <label for="EventType">Event Type:</label>
+    </div>
+    <div class="col-6">
+        <InputRadioGroup id="EventType" @bind-Value="_eventType" @bind-Value:after="ResetError">
+            @foreach (var type in Enum.GetValues<EventType>())
+            {
+                <InputRadio id="@($"EventType-{type}")" Value="type" />
+                <label for="@($"EventType-{type}")">&nbsp;@type.GetLabel()</label>
+                <br/>
+            }
+        </InputRadioGroup>
+    </div>
+</div>
+
+<div class="row py-2">
+    <div class="col-2 col-form-label">
+        <label for="Date">Date:</label>
+    </div>
+    <div class="col-6">
+        <input id="Date" type="date" class="form-control" @bind="_date" max="@DateTime.Today.ToString("yyyy-MM-dd")" required />
+    </div>
+</div>
+
+@if (_eventType is EventType.Visit or EventType.Procedure)
+{
+    <div class="row py-2">
+        <div class="col-2 col-form-label">
+            <label for="Doctor">Doctor:</label>
+        </div>
+        <div class="col-6">
+            <input id="Doctor" type="text" class="form-control" @bind="_doctor" required />
+        </div>
+    </div>
+    <div class="row py-2">
+        <div class="col-2 col-form-label">
+            <label for="Clinic">Clinic:</label>
+        </div>
+        <div class="col-6">
+            <input id="Clinic" type="text" class="form-control" @bind="_clinic" required />
+        </div>
+    </div>
+    @if (_eventType == EventType.Procedure)
+    {
+        <div class="row py-2">
+            <div class="col-2 col-form-label">
+                <label for="ProcedureName">Procedure Name:</label>
+            </div>
+            <div class="col-6">
+                <input id="ProcedureName" type="text" class="form-control" @bind="_procedureName" required />
+            </div>
+        </div>
+    }
+    <div class="row py-2">
+        <div class="col-2 col-form-label">
+            <label for="Description">Description:</label>
+        </div>
+        <div class="col-6">
+            <textarea id="Description" class="form-control" @bind="_description"></textarea>
+        </div>
+    </div>
+}
+else if (_eventType == EventType.LabTest)
+{
+    <div class="row py-2">
+        <div class="col-2 col-form-label">
+            <label for="LabName">Laboratory:</label>
+        </div>
+        <div class="col-6">
+            <input id="LabName" type="text" class="form-control" @bind="_labName" required />
+        </div>
+    </div>
+    <div class="row py-2">
+        <div class="col-2 col-form-label">
+            <label for="OrderedBy">Ordered By:</label>
+        </div>
+        <div class="col-6">
+            <input id="OrderedBy" type="text" class="form-control" @bind="_orderedBy" />
+        </div>
+    </div>
+
+    <div class="mt-3">
+        <h5>Test Results</h5>
+        <table class="table table-sm">
+            <thead>
+                <tr>
+                    <th>Test Name</th>
+                    <th>Value</th>
+                    <th>Normal Range</th>
+                    <th>In Range?</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var result in _labResults)
+                {
+                    <tr>
+                        <td><input type="text" class="form-control form-control-sm" @bind="result.TestName" required /></td>
+                        <td><input type="text" class="form-control form-control-sm" @bind="result.Value" required /></td>
+                        <td><input type="text" class="form-control form-control-sm" @bind="result.NormalRange" /></td>
+                        <td><input type="checkbox" @bind="result.InNormalRange" /></td>
+                        <td>
+                            <button class="btn btn-outline-danger btn-sm" @onclick="() => _labResults.Remove(result)">Remove</button>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+        <button class="btn btn-outline-secondary btn-sm" @onclick="AddLabResult">+ Add Result</button>
+    </div>
+}
+
+<div class="d-flex gap-2 mt-4">
+    <button class="btn btn-outline-secondary" @onclick='() => NavigationManager.NavigateTo($"Pet/{PetId}")'>Cancel</button>
+    <button class="btn btn-primary" @onclick="Save">Add</button>
+</div>
+
+@code 
+{
+    [Parameter] public int PetId { get; set; }
+    private EventType _eventType = EventType.Visit;
+    private DateOnly _date = DateOnly.FromDateTime(DateTime.Today);
+    
+    private string? _doctor;
+    private string? _clinic;
+    private string? _description;
+    
+    private string? _procedureName;
+    
+    private string? _labName;
+    private string? _orderedBy;
+    private List<LabResultModel> _labResults = new();
+
+    [Inject] private IDbContextFactory<PetHealthHistoryContext> DbFactory { get; set; }
+    [Inject] private NavigationManager NavigationManager { get; set; }
+
+    private string? _error;
+
+    public class LabResultModel
+    {
+        public string TestName { get; set; }
+        public string Value { get; set; }
+        public string? NormalRange { get; set; }
+        public bool InNormalRange { get; set; } = true;
+    }
+
+    private void AddLabResult()
+    {
+        _labResults.Add(new LabResultModel());
+    }
+
+    private async Task Save()
+    {
+        _error = null;
+        
+        // walidacja pól wymaganych na podstawie typu zdarzenia
+        var missingData = new List<string>();
+        if (_eventType is EventType.Visit or EventType.Procedure)
+        {
+            if (string.IsNullOrWhiteSpace(_doctor))
+            {
+                missingData.Add("Doctor");
+            }
+            if (string.IsNullOrWhiteSpace(_clinic))
+            {
+                missingData.Add("Clinic");
+            }
+            if (string.IsNullOrWhiteSpace(_description))
+            {
+                missingData.Add("Description");
+            }
+            if (_eventType == EventType.Procedure && string.IsNullOrWhiteSpace(_procedureName))
+            {
+                missingData.Add("Procedure Name");
+            }
+        }
+        else if (_eventType == EventType.LabTest)
+        {
+            if (string.IsNullOrWhiteSpace(_labName))
+            {
+                missingData.Add("Laboratory");
+            }
+
+            if (_labResults.Any(lr => string.IsNullOrWhiteSpace(lr.TestName)))
+            {
+                missingData.Add("Test Name");
+            }
+
+            if (_labResults.Any(lr => string.IsNullOrWhiteSpace(lr.Value)))
+            {
+                missingData.Add("Test Result Value");
+            }
+        }
+        
+        // wyświetł błąd jeżeli jakiekolwiek pole było nieprawidłowe
+        if (missingData.Count > 0)
+        {
+            _error = $"Please fill in the following required fields: {string.Join(", ", missingData)}";
+            return;
+        }
+
+        try
+        {
+            await using var context = DbFactory.CreateDbContext();
+            
+            var ev = CreateEvent();
+            context.Events.Add(ev);
+
+            await context.SaveChangesAsync();
+            NavigationManager.NavigateTo($"/Pet/{PetId}");
+        }
+        catch (Exception ex)
+        {
+            _error = ex.Message;
+        }
+    }
+
+    private Event CreateEvent()
+    {
+        return _eventType switch
+        {
+            EventType.Visit => new Visit(_date, PetId, _doctor!, _clinic!, _description!),
+            EventType.Procedure => new Procedure(_date, PetId, _doctor!, _clinic!, _description!, _procedureName!),
+            EventType.LabTest => new LabTest(_date, PetId, _labName!, _orderedBy,
+                _labResults.Select(r => new LabTestResult(r.TestName, r.Value, r.NormalRange, r.InNormalRange)).ToList()),
+            _ => throw new ArgumentOutOfRangeException()
+        };
+    }
+    
+    private void ResetError()
+    {
+        _error = null;
+    }
+}
