@@ -30,6 +30,10 @@ else
         {
             <p><strong>Species/Breed:</strong> @_pet.Kind</p>
         }
+        @if (!string.IsNullOrWhiteSpace(_funFact))
+        {
+            <p class="text-muted"><em>Fun fact: @_funFact</em></p>
+        }
     </div>
     
     <div class="d-flex justify-content-between align-items-center mb-4">
@@ -159,6 +163,7 @@ else
     private Pet? _pet;
     // pole do przechowywania frazy wyszukiwania
     private string _searchQuery = string.Empty;
+    private string? _funFact = null;
     
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -172,6 +177,10 @@ else
                 NavigationManager.NotFound();
                 return;
             }
+            
+            // przypisz losowy fakt dotyczący typu zwierzęcia (wywołanie metody koszystającej z abstrakcyjnej tablicy
+            // zdefiniowanej osobno dla każdego typu zwierzęcia)
+            _funFact ??= _pet.FunFact();
             
             StateHasChanged();
         }

@@ -55,6 +55,20 @@ public abstract class Pet
     // kolekcja zdarzeń medycznych powiązanych ze zwierzęciem
     public ICollection<Event> Events { get; protected set; }
     
+    // abstrakcyjna właściwość zwracająca ciekawe fakty o danym type zwierzęcia 
+    public abstract string[] FunFacts { get; }
+
+    // metoda zwracająca losowy fakt na podstawie abstrakcyjnej tablicy FunFacts
+    public string? FunFact()
+    {
+        if (FunFacts.Length == 0)
+        {
+            return null;
+        }
+        
+        return FunFacts[Random.Shared.Next(FunFacts.Length)];
+    }
+    
     protected Pet(string name, DateOnly birthDate, string? kind)
     {
         Name = name;
