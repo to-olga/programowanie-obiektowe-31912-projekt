@@ -36,6 +36,19 @@ public class LabTest : Event
     
     public override EventType EventType { get; protected set; } = EventType.LabTest;
     
+    // nadpisanie metody wyszukiwania dla wyników badań laboratoryjnych
+    // przeszukuje pola takie jak LabName, OrderedBy czy pola związane z wynikami testów
+    // koszysta też z bazowej metody z klasy Event
+    public override bool Search(string query)
+    {
+        return base.Search(query)
+               || LabName.Contains(query, StringComparison.OrdinalIgnoreCase)
+               || (OrderedBy != null && OrderedBy.Contains(query, StringComparison.OrdinalIgnoreCase))
+               || Results.Any(r => r.TestName.Contains(query, StringComparison.OrdinalIgnoreCase)
+                                   || r.Value.Contains(query, StringComparison.OrdinalIgnoreCase)
+                                   || (r.NormalRange != null && r.NormalRange.Contains(query, StringComparison.OrdinalIgnoreCase)));
+    }
+    
     public LabTest(DateOnly date, int petId, string labName, string? orderedBy) : base(date, petId)
     {
         LabName = labName;
