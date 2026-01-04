@@ -43,9 +43,13 @@ else
     }
     else
     {
+        <div class="mb-3">
+            <input type="text" class="form-control" placeholder="Search history..." @bind="_searchQuery" @bind:event="oninput" />
+        </div>
+        
         <div class="accordion" id="petHistoryAccordion">
-            @* posortuj zdarzenia po dacie *@
-            @foreach (var ev in _pet.Events.OrderByDescending(e => e.Date))
+            @* wyfiltruj zdarzenia na podstawie ciągu znaków podanego w polu wyszukiwania i posortuj po dacie *@
+            @foreach (var ev in _pet.Events.Where(e => e.Search(_searchQuery)).OrderByDescending(e => e.Date))
             {
                 var eventId = $"event-{ev.Id}";
                 <div class="accordion-item">
@@ -145,13 +149,16 @@ else
     }
 }
 
-@code {
+@code 
+{
     [Parameter] public int Id { get; set; }
 
     [Inject] public IDbContextFactory<PetHealthHistoryContext> DbFactory { get; private set; }
     [Inject] public NavigationManager NavigationManager { get; private set; }
 
     private Pet? _pet;
+    // pole do przechowywania frazy wyszukiwania
+    private string _searchQuery = string.Empty;
     
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {

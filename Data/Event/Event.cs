@@ -25,6 +25,18 @@ public abstract class Event
     
     // 
     public abstract EventType EventType { get; protected set; }
+    
+    // metoda wirtualna do wyszukiwania, nadpisywana w klasach pochodnych,
+    // każda klasa jest w stanie przeszukać swoje pola pod względem zawartości podanego ciągu tekstowego
+    public virtual bool Search(string query)
+    {
+        if (string.IsNullOrWhiteSpace(query))
+        {
+            return true;
+        }
+        
+        return Date.ToShortDateString().Contains(query, StringComparison.OrdinalIgnoreCase);
+    }
 
     protected Event(DateOnly date, int petId)
     {
