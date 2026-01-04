@@ -11,7 +11,7 @@
         <label for="EventType">Event Type:</label>
     </div>
     <div class="col-6">
-        <InputRadioGroup id="EventType" @bind-Value="_eventType" @bind-Value:after="ResetError">
+        <InputRadioGroup id="EventType" @bind-Value="EventType" @bind-Value:after="ResetError">
             @foreach (var type in Enum.GetValues<EventType>())
             {
                 <InputRadio id="@($"EventType-{type}")" Value="type" />
@@ -27,18 +27,18 @@
         <label for="Date">Date:</label>
     </div>
     <div class="col-6">
-        <input id="Date" type="date" class="form-control" @bind="_date" max="@DateTime.Today.ToString("yyyy-MM-dd")" required />
+        <input id="Date" type="date" class="form-control" @bind="Date" max="@DateTime.Today.ToString("yyyy-MM-dd")" required />
     </div>
 </div>
 
-@if (_eventType is EventType.Visit or EventType.Procedure)
+@if (EventType is EventType.Visit or EventType.Procedure)
 {
     <div class="row py-2">
         <div class="col-2 col-form-label">
             <label for="Doctor">Doctor:</label>
         </div>
         <div class="col-6">
-            <input id="Doctor" type="text" class="form-control" @bind="_doctor" required />
+            <input id="Doctor" type="text" class="form-control" @bind="Doctor" required />
         </div>
     </div>
     <div class="row py-2">
@@ -46,17 +46,17 @@
             <label for="Clinic">Clinic:</label>
         </div>
         <div class="col-6">
-            <input id="Clinic" type="text" class="form-control" @bind="_clinic" required />
+            <input id="Clinic" type="text" class="form-control" @bind="Clinic" required />
         </div>
     </div>
-    @if (_eventType == EventType.Procedure)
+    @if (EventType == EventType.Procedure)
     {
         <div class="row py-2">
             <div class="col-2 col-form-label">
                 <label for="ProcedureName">Procedure Name:</label>
             </div>
             <div class="col-6">
-                <input id="ProcedureName" type="text" class="form-control" @bind="_procedureName" required />
+                <input id="ProcedureName" type="text" class="form-control" @bind="ProcedureName" required />
             </div>
         </div>
     }
@@ -65,18 +65,18 @@
             <label for="Description">Description:</label>
         </div>
         <div class="col-6">
-            <textarea id="Description" class="form-control" @bind="_description"></textarea>
+            <textarea id="Description" class="form-control" @bind="Description"></textarea>
         </div>
     </div>
 }
-else if (_eventType == EventType.LabTest)
+else if (EventType == EventType.LabTest)
 {
     <div class="row py-2">
         <div class="col-2 col-form-label">
             <label for="LabName">Laboratory:</label>
         </div>
         <div class="col-6">
-            <input id="LabName" type="text" class="form-control" @bind="_labName" required />
+            <input id="LabName" type="text" class="form-control" @bind="LabName" required />
         </div>
     </div>
     <div class="row py-2">
@@ -84,7 +84,7 @@ else if (_eventType == EventType.LabTest)
             <label for="OrderedBy">Ordered By:</label>
         </div>
         <div class="col-6">
-            <input id="OrderedBy" type="text" class="form-control" @bind="_orderedBy" />
+            <input id="OrderedBy" type="text" class="form-control" @bind="OrderedBy" />
         </div>
     </div>
 
@@ -101,7 +101,7 @@ else if (_eventType == EventType.LabTest)
                 </tr>
             </thead>
             <tbody>
-                @foreach (var result in _labResults)
+                @foreach (var result in LabResults)
                 {
                     <tr>
                         <td><input type="text" class="form-control form-control-sm" @bind="result.TestName" required /></td>
@@ -109,7 +109,7 @@ else if (_eventType == EventType.LabTest)
                         <td><input type="text" class="form-control form-control-sm" @bind="result.NormalRange" /></td>
                         <td><input type="checkbox" @bind="result.InNormalRange" /></td>
                         <td>
-                            <button class="btn btn-outline-danger btn-sm" @onclick="() => _labResults.Remove(result)">Remove</button>
+                            <button class="btn btn-outline-danger btn-sm" @onclick="() => LabResults.Remove(result)">Remove</button>
                         </td>
                     </tr>
                 }
@@ -120,25 +120,28 @@ else if (_eventType == EventType.LabTest)
 }
 
 <div class="d-flex gap-2 mt-4">
-    <button class="btn btn-outline-secondary" @onclick='() => NavigationManager.NavigateTo($"Pet/{PetId}")'>Cancel</button>
-    <button class="btn btn-primary" @onclick="Save">Add</button>
+    <button class="btn btn-outline-secondary" @onclick='() => NavigationManager.NavigateTo($"/Pet/{PetId}")'>Cancel</button>
+    <button class="btn btn-primary" @onclick="Save">@SaveLabel</button>
 </div>
 
 @code 
 {
+    [Parameter] public int? Id { get; set; }
     [Parameter] public int PetId { get; set; }
-    private EventType _eventType = EventType.Visit;
-    private DateOnly _date = DateOnly.FromDateTime(DateTime.Today);
+    [Parameter] public EventType EventType { get; set; } = EventType.Visit;
+    [Parameter] public DateOnly Date { get; set; } = DateOnly.FromDateTime(DateTime.Today);
     
-    private string? _doctor;
-    private string? _clinic;
-    private string? _description;
+    [Parameter] public string? Doctor { get; set; }
+    [Parameter] public string? Clinic { get; set; }
+    [Parameter] public string? Description { get; set; }
     
-    private string? _procedureName;
+    [Parameter] public string? ProcedureName { get; set; }
     
-    private string? _labName;
-    private string? _orderedBy;
-    private List<LabResultModel> _labResults = new();
+    [Parameter] public string? LabName { get; set; }
+    [Parameter] public string? OrderedBy { get; set; }
+    [Parameter] public List<LabResultModel> LabResults { get; set; } = new();
+
+    [Parameter] public string SaveLabel { get; set; } = "Add";
 
     [Inject] private IDbContextFactory<PetHealthHistoryContext> DbFactory { get; set; }
     [Inject] private NavigationManager NavigationManager { get; set; }
@@ -147,15 +150,15 @@ else if (_eventType == EventType.LabTest)
 
     public class LabResultModel
     {
-        public string TestName { get; set; }
-        public string Value { get; set; }
+        public string TestName { get; set; } = "";
+        public string Value { get; set; } = "";
         public string? NormalRange { get; set; }
         public bool InNormalRange { get; set; } = true;
     }
 
     private void AddLabResult()
     {
-        _labResults.Add(new LabResultModel());
+        LabResults.Add(new LabResultModel());
     }
 
     private async Task Save()
@@ -164,38 +167,38 @@ else if (_eventType == EventType.LabTest)
         
         // walidacja pól wymaganych na podstawie typu zdarzenia
         var missingData = new List<string>();
-        if (_eventType is EventType.Visit or EventType.Procedure)
+        if (EventType is EventType.Visit or EventType.Procedure)
         {
-            if (string.IsNullOrWhiteSpace(_doctor))
+            if (string.IsNullOrWhiteSpace(Doctor))
             {
                 missingData.Add("Doctor");
             }
-            if (string.IsNullOrWhiteSpace(_clinic))
+            if (string.IsNullOrWhiteSpace(Clinic))
             {
                 missingData.Add("Clinic");
             }
-            if (string.IsNullOrWhiteSpace(_description))
+            if (string.IsNullOrWhiteSpace(Description))
             {
                 missingData.Add("Description");
             }
-            if (_eventType == EventType.Procedure && string.IsNullOrWhiteSpace(_procedureName))
+            if (EventType == EventType.Procedure && string.IsNullOrWhiteSpace(ProcedureName))
             {
                 missingData.Add("Procedure Name");
             }
         }
-        else if (_eventType == EventType.LabTest)
+        else if (EventType == EventType.LabTest)
         {
-            if (string.IsNullOrWhiteSpace(_labName))
+            if (string.IsNullOrWhiteSpace(LabName))
             {
                 missingData.Add("Laboratory");
             }
 
-            if (_labResults.Any(lr => string.IsNullOrWhiteSpace(lr.TestName)))
+            if (LabResults.Any(lr => string.IsNullOrWhiteSpace(lr.TestName)))
             {
                 missingData.Add("Test Name");
             }
 
-            if (_labResults.Any(lr => string.IsNullOrWhiteSpace(lr.Value)))
+            if (LabResults.Any(lr => string.IsNullOrWhiteSpace(lr.Value)))
             {
                 missingData.Add("Test Result Value");
             }
@@ -212,8 +215,55 @@ else if (_eventType == EventType.LabTest)
         {
             await using var context = DbFactory.CreateDbContext();
             
-            var ev = CreateEvent();
-            context.Events.Add(ev);
+            // jeżeli parametr Id ma wartość to jest to edycja a nie dodanie nowego zdarzenia
+            if (Id.HasValue)
+            {
+                var ev = await context.Events.FindAsync(Id.Value);
+                if (ev == null)
+                {
+                    NavigationManager.NotFound();
+                    return;
+                }
+
+                if (ev.EventType != EventType)
+                {
+                    // przy zmianie typu tworzymy obiekt na nowo, a stary usuwamy
+                    var newEvent = CreateEvent();
+                    context.Events.Remove(ev);
+                    context.Events.Add(newEvent);
+                }
+                else
+                {
+                    ev.Date = Date;
+
+                    if (ev is Visit v)
+                    {
+                        v.Doctor = Doctor!;
+                        v.Clinic = Clinic!;
+                        v.Description = Description!;
+                        if (v is Procedure p)
+                        {
+                            p.Name = ProcedureName!;
+                        }
+                    }
+                    else if (ev is LabTest lt)
+                    {
+                        lt.LabName = LabName!;
+                        lt.OrderedBy = OrderedBy;
+
+                        lt.Results.Clear();
+                        foreach (var r in LabResults)
+                        {
+                            lt.Results.Add(new LabTestResult(r.TestName, r.Value, r.NormalRange, r.InNormalRange, lt.Id));
+                        }
+                    }
+                }
+            }
+            else
+            {
+                var ev = CreateEvent();
+                context.Events.Add(ev);
+            }
 
             await context.SaveChangesAsync();
             NavigationManager.NavigateTo($"/Pet/{PetId}");
@@ -226,12 +276,12 @@ else if (_eventType == EventType.LabTest)
 
     private Event CreateEvent()
     {
-        return _eventType switch
+        return EventType switch
         {
-            EventType.Visit => new Visit(_date, PetId, _doctor!, _clinic!, _description!),
-            EventType.Procedure => new Procedure(_date, PetId, _doctor!, _clinic!, _description!, _procedureName!),
-            EventType.LabTest => new LabTest(_date, PetId, _labName!, _orderedBy,
-                _labResults.Select(r => new LabTestResult(r.TestName, r.Value, r.NormalRange, r.InNormalRange)).ToList()),
+            EventType.Visit => new Visit(Date, PetId, Doctor!, Clinic!, Description!),
+            EventType.Procedure => new Procedure(Date, PetId, Doctor!, Clinic!, Description!, ProcedureName!),
+            EventType.LabTest => new LabTest(Date, PetId, LabName!, OrderedBy,
+                LabResults.Select(r => new LabTestResult(r.TestName, r.Value, r.NormalRange, r.InNormalRange)).ToList()),
             _ => throw new ArgumentOutOfRangeException()
         };
     }

@@ -1,0 +1,91 @@
+@page "/Event/{Id:int}/Edit"
+@rendermode InteractiveServer
+@using Microsoft.EntityFrameworkCore
+@using PetHealthHistory.Data
+@using PetHealthHistory.Components.Forms
+
+<PageTitle>Edit Event</PageTitle>
+
+<h3>Edit Event</h3>
+
+@if (_event != null)
+{
+    <EventForm Id="@_event.Id" 
+               PetId="@_event.PetId"
+               EventType="@_event.EventType"
+               Date="@_event.Date"
+               Doctor="@_doctor"
+               Clinic="@_clinic"
+               Description="@_description"
+               ProcedureName="@_procedureName"
+               LabName="@_labName"
+               OrderedBy="@_orderedBy"
+               LabResults="_labResultModels"
+               SaveLabel="Save" />
+}
+else
+{
+    <p>Loading...</p>
+}
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    [Inject] private IDbContextFactory<PetHealthHistoryContext> DbFactory { get; set; }
+    [Inject] private NavigationManager NavigationManager { get; set; }
+
+    private Event? _event;
+    private List<EventForm.LabResultModel>? _labResultModels;
+    private string? _doctor;
+    private string? _clinic;
+    private string? _description;
+    private string? _procedureName;
+    private string? _labName;
+    private string? _orderedBy;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            await using var context = DbFactory.CreateDbContext();
+            _event = await context.Events.FindAsync(Id);
+            
+            if (_event == null)
+            {
+                NavigationManager.NotFound();
+                return;
+            }
+            
+            if (_event is Visit v)
+            {
+                _doctor = v.Doctor;
+                _clinic = v.Clinic;
+                _description = v.Description;
+            }
+            
+            if (_event is Procedure p)
+            {
+                _procedureName = p.Name;
+            }
+            
+            if (_event is LabTest lt)
+            {
+                _labResultModels = lt.Results.Select(r => new EventForm.LabResultModel
+                {
+                    TestName = r.TestName,
+                    Value = r.Value,
+                    NormalRange = r.NormalRange,
+                    InNormalRange = r.InNormalRange
+                }).ToList();
+                _labName = lt.LabName;
+                _orderedBy = lt.OrderedBy;
+            }
+            else
+            {
+                _labResultModels = [];
+            }
+            
+            StateHasChanged();
+        }
+    }
+}
