@@ -70,6 +70,7 @@ else
                                 <span class="text-nowrap ms-auto">
                                     @ev.Date.ToShortDateString()
                                     <span class="ms-2" @onclick='() => NavigationManager.NavigateTo($"/Event/{ev.Id}/Edit")' @onclick:stopPropagation="true">🛠️</span>
+                                    <span class="ms-2" @onclick='() => NavigationManager.NavigateTo($"/Event/{ev.Id}/Delete")' @onclick:stopPropagation="true">🗑️</span>
                                 </span>
                             </div>
                         </button>
