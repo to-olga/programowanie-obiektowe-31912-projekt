@@ -64,4 +64,15 @@ public abstract class Pet
     }
 }
 
-public enum PetType { Cat, Dog }
+public enum PetType { Cat, Dog, Mouse, Hamster, Snake, Horse, Rabbit, Fish, GuineaPig, Spider }
+
+public static class PetTypeExtensions
+{
+    // rozszerzenie zwracające odpowednią etykietę typu zwierzęcia ('Guinea Pig' zamiast 'GuineaPig')
+    public static string GetLabel(this PetType type) => type switch
+    {
+
+        PetType.GuineaPig => "Guinea Pig",
+        _ => type.ToString()
+    };
+}

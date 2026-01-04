@@ -66,3 +66,35 @@ h1:focus {
 .icon-dog::before {
     content: '🐕‍🦺 ';
 }
+
+.icon-mouse::before {
+    content: '🐭 ';
+}
+
+.icon-hamster::before {
+    content: '🐹 ';
+}
+
+.icon-snake::before {
+    content: '🐍 ';
+}
+
+.icon-horse::before {
+    content: '🐎 ';
+}
+
+.icon-rabbit::before {
+    content: '🐇 ';
+}
+
+.icon-fish::before {
+    content: '🐟 ';
+}
+
+.icon-guineapig::before {
+    content: '🐹 ';
+}
+
+.icon-spider::before {
+    content: '🕷️ ';
+}

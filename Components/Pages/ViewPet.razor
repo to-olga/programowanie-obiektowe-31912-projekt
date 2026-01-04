@@ -14,7 +14,7 @@ else
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h3>
             <span class="icon-@_pet.PetType.ToString().ToLower()"></span>
-            @_pet.Name (@_pet.PetType.ToString())
+            @_pet.Name (@_pet.PetType.GetLabel())
         </h3>
         <div class="d-flex gap-2">
             <button class="btn btn-outline-primary btn-sm" @onclick='() => NavigationManager.NavigateTo($"/Pet/{_pet.Id}/Edit")'>Edit</button>
