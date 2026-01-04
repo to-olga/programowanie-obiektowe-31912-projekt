@@ -27,7 +27,15 @@ public class PetHealthHistoryContext : DbContext
         modelBuilder.Entity<Pet>().Navigation(p => p.Events).AutoInclude();                             // włącz automatyczne ładowanie powiązanych zdarzeń z bazy danych: https://learn.microsoft.com/en-us/ef/core/querying/related-data/eager#model-configuration-for-auto-including-navigations
         modelBuilder.Entity<Pet>().HasDiscriminator(p => p.PetType)                                     // przechowywanie wszystkich typów zwierząt w jednej tabeli (i dostęp za pomocą jednej kolekcji generycznej): https://learn.microsoft.com/en-us/ef/core/modeling/inheritance#table-per-hierarchy-and-discriminator-configuration
             .HasValue<Cat>(PetType.Cat)
-            .HasValue<Dog>(PetType.Dog);
+            .HasValue<Dog>(PetType.Dog)
+            .HasValue<Mouse>(PetType.Mouse)
+            .HasValue<Hamster>(PetType.Hamster)
+            .HasValue<Snake>(PetType.Snake)
+            .HasValue<Horse>(PetType.Horse)
+            .HasValue<Rabbit>(PetType.Rabbit)
+            .HasValue<Fish>(PetType.Fish)
+            .HasValue<GuineaPig>(PetType.GuineaPig)
+            .HasValue<Spider>(PetType.Spider);
         
         modelBuilder.Entity<Event>().HasKey(e => e.Id);                                                     // klucz główny
         modelBuilder.Entity<Event>().Property(e => e.EventType).HasConversion<string>().HasMaxLength(10);   // przechowywanie typu enum jako string zamiast liczby: https://stackoverflow.com/a/55260541 + maksymalna długość

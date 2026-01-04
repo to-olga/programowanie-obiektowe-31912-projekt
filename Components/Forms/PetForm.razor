@@ -27,9 +27,9 @@
     </div>
     <div class="col-4">
         <select @bind="Type" class="form-select">
-            @foreach (var petType in Enum.GetValues(typeof(PetType)))
+            @foreach (var petType in PetTypes)
             {
-                <option value="@petType">@petType.ToString()</option>
+                <option value="@petType">@petType.GetLabel()</option>
             }
         </select>
     </div>
@@ -49,7 +49,8 @@
 </div>
 
 
-@code {
+@code 
+{
     [Parameter] public int? Id { get; set; }
     [Parameter] public string? Name { get; set; }
     [Parameter] public string? Kind { get; set; }
@@ -60,6 +61,9 @@
 
     [Inject] private IDbContextFactory<PetHealthHistoryContext> DbFactory { get; set; }
     [Inject] private NavigationManager NavigationManager { get; set; }
+    
+    // posortowana alfabetycznie lista typów zwierząt
+    private static readonly PetType[] PetTypes = Enum.GetValues(typeof(PetType)).Cast<PetType>().OrderBy(t => t.ToString()).ToArray();
     
     private string _cancelLink = "/";
 
@@ -157,6 +161,14 @@
         {
             PetType.Cat => new Cat(Name!, BirthDate!.Value, Kind),
             PetType.Dog => new Dog(Name!, BirthDate!.Value, Kind),
+            PetType.Mouse => new Mouse(Name!, BirthDate!.Value, Kind),
+            PetType.Hamster => new Hamster(Name!, BirthDate!.Value, Kind),
+            PetType.Snake => new Snake(Name!, BirthDate!.Value, Kind),
+            PetType.Horse => new Horse(Name!, BirthDate!.Value, Kind),
+            PetType.Rabbit => new Rabbit(Name!, BirthDate!.Value, Kind),
+            PetType.Fish => new Fish(Name!, BirthDate!.Value, Kind),
+            PetType.GuineaPig => new GuineaPig(Name!, BirthDate!.Value, Kind),
+            PetType.Spider => new Spider(Name!, BirthDate!.Value, Kind),
             _ => throw new ArgumentOutOfRangeException($"Invalid pet type: {Type.ToString()}")
         };
         return pet;
