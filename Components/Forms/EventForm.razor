@@ -38,7 +38,7 @@
             <label for="Doctor">Doctor:</label>
         </div>
         <div class="col-6">
-            <input id="Doctor" type="text" class="form-control" @bind="Doctor" required />
+            <input id="Doctor" type="text" class="form-control" @bind="Doctor" list="doctorSuggestions" required />
         </div>
     </div>
     <div class="row py-2">
@@ -46,7 +46,7 @@
             <label for="Clinic">Clinic:</label>
         </div>
         <div class="col-6">
-            <input id="Clinic" type="text" class="form-control" @bind="Clinic" required />
+            <input id="Clinic" type="text" class="form-control" @bind="Clinic" list="clinicSuggestions" required />
         </div>
     </div>
     @if (EventType == EventType.Procedure)
@@ -68,6 +68,19 @@
             <textarea id="Description" class="form-control" @bind="Description"></textarea>
         </div>
     </div>
+    
+    <datalist id="doctorSuggestions">
+        @foreach (var suggestion in _doctorSuggestions)
+        {
+            <option value="@suggestion"></option>
+        }
+    </datalist>
+    <datalist id="clinicSuggestions">
+        @foreach (var suggestion in _clinicSuggestions)
+        {
+            <option value="@suggestion"></option>
+        }
+    </datalist>
 }
 else if (EventType == EventType.LabTest)
 {
@@ -76,7 +89,7 @@ else if (EventType == EventType.LabTest)
             <label for="LabName">Laboratory:</label>
         </div>
         <div class="col-6">
-            <input id="LabName" type="text" class="form-control" @bind="LabName" required />
+            <input id="LabName" type="text" class="form-control" @bind="LabName" list="labNameSuggestions" required />
         </div>
     </div>
     <div class="row py-2">
@@ -84,7 +97,7 @@ else if (EventType == EventType.LabTest)
             <label for="OrderedBy">Ordered By:</label>
         </div>
         <div class="col-6">
-            <input id="OrderedBy" type="text" class="form-control" @bind="OrderedBy" />
+            <input id="OrderedBy" type="text" class="form-control" @bind="OrderedBy" list="orderedBySuggestions" />
         </div>
     </div>
 
@@ -104,7 +117,7 @@ else if (EventType == EventType.LabTest)
                 @foreach (var result in LabResults)
                 {
                     <tr>
-                        <td><input type="text" class="form-control form-control-sm" @bind="result.TestName" required /></td>
+                        <td><input type="text" class="form-control form-control-sm" @bind="result.TestName" list="testNameSuggestions" required /></td>
                         <td><input type="text" class="form-control form-control-sm" @bind="result.Value" required /></td>
                         <td><input type="text" class="form-control form-control-sm" @bind="result.NormalRange" /></td>
                         <td><input type="checkbox" @bind="result.InNormalRange" /></td>
@@ -115,8 +128,26 @@ else if (EventType == EventType.LabTest)
                 }
             </tbody>
         </table>
+        <datalist id="testNameSuggestions">
+            @foreach (var suggestion in _testNameSuggestions)
+            {
+                <option value="@suggestion"></option>
+            }
+        </datalist>
         <button class="btn btn-outline-secondary btn-sm" @onclick="AddLabResult">+ Add Result</button>
     </div>
+    <datalist id="labNameSuggestions">
+        @foreach (var suggestion in _labNameSuggestions)
+        {
+            <option value="@suggestion"></option>
+        }
+    </datalist>
+    <datalist id="orderedBySuggestions">
+        @foreach (var suggestion in _orderedBySuggestions)
+        {
+            <option value="@suggestion"></option>
+        }
+    </datalist>
 }
 
 <div class="d-flex gap-2 mt-4">
@@ -147,13 +178,55 @@ else if (EventType == EventType.LabTest)
     [Inject] private NavigationManager NavigationManager { get; set; }
 
     private string? _error;
-
-    public class LabResultModel
+    private List<string> _doctorSuggestions = new();
+    private List<string> _clinicSuggestions = new();
+    private List<string> _testNameSuggestions = new();
+    private List<string> _labNameSuggestions = new();
+    private List<string> _orderedBySuggestions = new();
+    
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        public string TestName { get; set; } = "";
-        public string Value { get; set; } = "";
-        public string? NormalRange { get; set; }
-        public bool InNormalRange { get; set; } = true;
+        if (firstRender)
+        {
+            await using var context = DbFactory.CreateDbContext();
+            
+            // pobierz z bazy danych listy istniejących wartości do podpowiedzi pól
+            _doctorSuggestions = await context.Events.OfType<Visit>()
+                .Select(v => v.Doctor)
+                .Distinct()
+                .OrderBy(d => d)
+                .ToListAsync();
+
+            _clinicSuggestions = await context.Events.OfType<Visit>()
+                .Select(v => v.Clinic)
+                .Distinct()
+                .OrderBy(c => c)
+                .ToListAsync();
+
+            _testNameSuggestions = await context.LabTestResults
+                .Select(r => r.TestName)
+                .Distinct()
+                .OrderBy(t => t)
+                .ToListAsync();
+
+            _labNameSuggestions = await context.Events.OfType<LabTest>()
+                .Select(l => l.LabName)
+                .Distinct()
+                .OrderBy(l => l)
+                .ToListAsync();
+            
+            var orderedBySuggestions = await context.Events.OfType<LabTest>()
+                .Select(l => l.OrderedBy ?? string.Empty)
+                .Where(o => !string.IsNullOrWhiteSpace(o))
+                .ToListAsync();
+            
+            // podpowiedzi pola 'Ordered by' poza poprzednini wartościam itego pola zawierają także lekarzy i kliniki
+            orderedBySuggestions.AddRange(_doctorSuggestions);
+            orderedBySuggestions.AddRange(_clinicSuggestions);
+            _orderedBySuggestions = orderedBySuggestions.Distinct().Order().ToList();
+            
+            StateHasChanged();
+        }
     }
 
     private void AddLabResult()
@@ -289,5 +362,13 @@ else if (EventType == EventType.LabTest)
     private void ResetError()
     {
         _error = null;
+	}
+
+    public class LabResultModel
+    {
+        public string TestName { get; set; } = "";
+        public string Value { get; set; } = "";
+        public string? NormalRange { get; set; }
+        public bool InNormalRange { get; set; } = true;
     }
 }
